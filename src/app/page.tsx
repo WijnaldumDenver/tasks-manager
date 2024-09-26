@@ -1,12 +1,14 @@
 "use client";
 
 import Sidebar from "@/components/sidebar";
-import useGetCollectionQuery from "@/queries/getCollection";
-import Image from "next/image";
+import useGetTasksQuery from "@/queries/getTasks";
 import { auth } from "../../firebase/clientApp";
 
 export default function Home() {
-  const { data } = useGetCollectionQuery("tasks");
+const current_user_id = auth?.currentUser?.uid;
+
+  const { data: tasks } = useGetTasksQuery(current_user_id as string);
+
   return (
     <main>
       <div>
