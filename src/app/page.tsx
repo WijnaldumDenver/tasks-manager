@@ -3,112 +3,88 @@
 import Sidebar from "@/components/sidebar";
 import useGetTasksQuery from "@/queries/getTasks";
 import { auth } from "../../firebase/clientApp";
+import { HoverCard, Image, Text, UnstyledButton } from "@mantine/core";
+import { Icon } from "@iconify/react/dist/iconify.js";
 
 export default function Home() {
-const current_user_id = auth?.currentUser?.uid;
+  const current_user_id = auth?.currentUser?.uid;
 
   const { data: tasks } = useGetTasksQuery(current_user_id as string);
 
   return (
-    <main>
-      <div>
-        <Sidebar />
-        <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-          <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/next.svg"
-              alt="Next.js logo"
-              width={180}
-              height={38}
-              priority
-            />
-            <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-              <li className="mb-2">
-                Get started by editing{" "}
-                <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-                  src/app/page.tsx
-                </code>
-                .
-              </li>
-              <li>Save and see your changes instantly.</li>
-            </ol>
-
-            <div className="flex gap-4 items-center flex-col sm:flex-row">
-              <a
-                className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-                href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <Image
-                  className="dark:invert"
-                  src="https://nextjs.org/icons/vercel.svg"
-                  alt="Vercel logomark"
-                  width={20}
-                  height={20}
-                />
-                Deploy now
-              </a>
-              <a
-                className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-                href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Read our docs
-              </a>
+    <main className="flex">
+      <Sidebar />
+      <section className="max-h-screen w-full m-20">
+        <div className="bg-white p-4 min-h-full max-h-full rounded-tl-xl rounded-br-xl w-full shadow-[0px_0px_16px_1px_#AAAAAA]">
+          <div className="rounded-tl-xl mb-4 w-32 h-24 transition-all border-2 border-gray-300 hover:text-primary-900 hover:bg-primary-200 hover:border-primary-800 active:scale-95 rounded-br-xl">
+            <UnstyledButton className="w-full h-full">
+              <Icon
+                icon="gridicons:add-outline"
+                className="m-auto"
+                width={"48"}
+              />
+            </UnstyledButton>
+          </div>
+          {!tasks ? (
+            <div className="w-64 mx-auto my-[10%]">
+              <Image fit="cover" src={"/no-tasks.png"} />
             </div>
-          </main>
-          <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-            <a
-              className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <Image
-                aria-hidden
-                src="https://nextjs.org/icons/file.svg"
-                alt="File icon"
-                width={16}
-                height={16}
-              />
-              Learn
-            </a>
-            <a
-              className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <Image
-                aria-hidden
-                src="https://nextjs.org/icons/window.svg"
-                alt="Window icon"
-                width={16}
-                height={16}
-              />
-              Examples
-            </a>
-            <a
-              className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-              href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <Image
-                aria-hidden
-                src="https://nextjs.org/icons/globe.svg"
-                alt="Globe icon"
-                width={16}
-                height={16}
-              />
-              Go to nextjs.org →
-            </a>
-          </footer>
+          ) : (
+            <div className="w-full max-h-full overflow-y-scroll bg-gray-100 rounded-tl-xl shadow-[inset_0px_0px_16px_1px_#AAAAAA] p-4 rounded-br-xl">
+              {tasks?.map((task: any, i: any) => (
+                <div
+                  className="w-full max-h-64 bg-white rounded-tl-xl p-4 rounded-br-xl"
+                  key={i}
+                >
+                  <div className="mt-2 flex w-full">
+                    <div className="w-3/4">
+                      <span className="font-bold text-xl">{task?.title}</span>
+                      <p className="mt-2">{task?.description}</p>
+                    </div>
+                    <div className="w-1/4 gap-4 grid grid-cols-2">
+                      <ActionButton
+                        icon="tdesign:edit"
+                        description="Edit"
+                        className="rounded-br-xl rounded-tl-xl transition-all border-2 border-gray-300 hover:text-primary-900 hover:bg-primary-200 hover:border-primary-800 active:scale-95"
+                      />
+                      <ActionButton
+                        icon="ic:baseline-delete"
+                        description="Delete"
+                        className="rounded-br-xl rounded-tl-xl transition-all border-2 border-gray-300 hover:text-red-950 hover:bg-red-400 hover:border-red-500 active:scale-95"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-      </div>
+      </section>
     </main>
+  );
+}
+
+function ActionButton({
+  className,
+  description,
+  icon,
+}: {
+  className?: string;
+  description: string;
+  icon: string;
+}) {
+  return (
+    <HoverCard shadow="md">
+      <HoverCard.Target>
+        <div className={className}>
+          <UnstyledButton className="w-full h-full">
+            <Icon icon={icon} className="m-auto" width={"48"} />
+          </UnstyledButton>
+        </div>
+      </HoverCard.Target>
+      <HoverCard.Dropdown>
+        <Text size="sm">{description}</Text>
+      </HoverCard.Dropdown>
+    </HoverCard>
   );
 }
