@@ -32,10 +32,12 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <MantineProvider>
-          <FirebaseNextJSProvider>
-            <Provider>{children}</Provider>
-          </FirebaseNextJSProvider>
+        <MantineProvider defaultColorScheme="light">
+          <div className="bg-gray-100">
+            <FirebaseNextJSProvider>
+              <Provider>{children}</Provider>
+            </FirebaseNextJSProvider>
+          </div>
         </MantineProvider>
       </body>
     </html>
