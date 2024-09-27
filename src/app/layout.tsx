@@ -2,9 +2,11 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import "@mantine/core/styles.css";
+import "@mantine/notifications/styles.css";
 import Provider from "../util/Providers";
 import { FirebaseNextJSProvider } from "firebase-nextjs/client/auth";
 import { MantineProvider } from "@mantine/core";
+import { Notifications } from "@mantine/notifications";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -32,8 +34,9 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <MantineProvider defaultColorScheme="light">
-          <div className="bg-gray-100">
+        <MantineProvider>
+          <Notifications />
+          <div className="bg-gray-100 text-black">
             <FirebaseNextJSProvider>
               <Provider>{children}</Provider>
             </FirebaseNextJSProvider>
