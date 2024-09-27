@@ -1,7 +1,10 @@
+"use client";
+
 import { LogoutButton, ProfileButton } from "firebase-nextjs/client/components";
-import React, { ReactNode } from "react";
+import React from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
-import { Button, UnstyledButton } from "@mantine/core";
+import { UnstyledButton } from "@mantine/core";
+import { auth } from "firebase-nextjs/firebasenextjs-firebase";
 
 export default function Sidebar() {
   const sideBarButtons = [
@@ -18,31 +21,33 @@ export default function Sidebar() {
       label: "Log Out",
     },
   ];
-  return (
-    <div className="fixed flex flex-col bg-clip-border rounded-r-xl bg-white text-gray-700 min-h-screen w-full max-w-[20rem] p-4 shadow-xl shadow-blue-gray-900/5">
-      <div className="mb-2 p-4 mx-auto flex flex-col justify-center ">
-        <h5 className="block antialiased tracking-normal font-sans text-xl font-semibold leading-snug text-gray-900">
-          Tasks Manager
-        </h5>
-        <div className="min-w-16 mx-auto mt-8">
-          <ProfileButton size={128} />
+
+  if (auth.currentUser)
+    return (
+      <div className="relative flex flex-col bg-clip-border rounded-r-xl bg-white text-gray-700 min-h-screen w-full max-w-[20rem] p-4 shadow-[0px_0px_16px_1px_#AAAAAA]">
+        <div className="mb-2 p-4 mx-auto flex flex-col justify-center ">
+          <h5 className="block antialiased tracking-normal font-sans text-xl font-semibold leading-snug text-gray-900">
+            Tasks Manager
+          </h5>
+          <div className="min-w-16 mx-auto mt-8">
+            <ProfileButton size={128} />
+          </div>
         </div>
-      </div>
-      <nav className="flex flex-col gap-1 min-w-[240px] p-2 font-sans text-base font-normal text-gray-700">
-        {sideBarButtons.map((button) => (
-          <>
-            {button.label === "Log Out" ? (
-              <SideBarButton icon={button.icon} label={button.label} />
-            ) : (
-              <LogoutButton>
+        <nav className="flex flex-col gap-1 min-w-[240px] p-2 font-sans text-base font-normal text-gray-700">
+          {sideBarButtons.map((button) => (
+            <>
+              {button.label !== "Log Out" ? (
                 <SideBarButton icon={button.icon} label={button.label} />
-              </LogoutButton>
-            )}
-          </>
-        ))}
-      </nav>
-    </div>
-  );
+              ) : (
+                <LogoutButton>
+                  <SideBarButton icon={button.icon} label={button.label} />
+                </LogoutButton>
+              )}
+            </>
+          ))}
+        </nav>
+      </div>
+    );
 }
 
 function SideBarButton({ icon, label }: { icon: string; label: string }) {

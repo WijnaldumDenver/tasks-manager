@@ -6,6 +6,7 @@ import "@mantine/notifications/styles.css";
 import Provider from "../util/Providers";
 import { FirebaseNextJSProvider } from "firebase-nextjs/client/auth";
 import { MantineProvider } from "@mantine/core";
+import Sidebar from "@/components/sidebar";
 import { Notifications } from "@mantine/notifications";
 
 const geistSans = localFont({
@@ -38,7 +39,12 @@ export default function RootLayout({
           <Notifications />
           <div className="bg-gray-100 text-black">
             <FirebaseNextJSProvider>
-              <Provider>{children}</Provider>
+              <Provider>
+                <main className="flex">
+                  <Sidebar />
+                  {children}
+                </main>
+              </Provider>
             </FirebaseNextJSProvider>
           </div>
         </MantineProvider>
