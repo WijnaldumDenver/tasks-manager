@@ -34,8 +34,8 @@ export default function Sidebar() {
           </div>
         </div>
         <nav className="flex flex-col gap-1 min-w-[240px] p-2 font-sans text-base font-normal text-gray-700">
-          {sideBarButtons.map((button) => (
-            <>
+          {sideBarButtons.map((button, i) => (
+            <div key={i}>
               {button.label !== "Log Out" ? (
                 <SideBarButton icon={button.icon} label={button.label} />
               ) : (
@@ -43,7 +43,7 @@ export default function Sidebar() {
                   <SideBarButton icon={button.icon} label={button.label} />
                 </LogoutButton>
               )}
-            </>
+            </div>
           ))}
         </nav>
       </div>

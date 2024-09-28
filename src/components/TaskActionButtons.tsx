@@ -156,7 +156,6 @@ export default function ActionButton({
             />
             <NativeSelect
               name="status"
-              defaultValue={"not_started"}
               value={form.status}
               data={taskStatusOptions}
               label="Task Status"
@@ -303,7 +302,6 @@ export default function ActionButton({
             />
             <NativeSelect
               name="status"
-              defaultValue={"not_started"}
               value={form.status}
               data={taskStatusOptions}
               label="Task Status"
@@ -341,7 +339,7 @@ export default function ActionButton({
                 }}
                 className="w-full h-full"
               >
-                <Icon icon={icon ? icon : ""} className="m-auto" width={"48"} />
+                <Icon icon={icon ? icon : ""} className="m-auto" width={"32"} />
               </UnstyledButton>
             </div>
           </HoverCard.Target>
@@ -435,7 +433,7 @@ export default function ActionButton({
                 }}
                 className="w-full h-full"
               >
-                <Icon icon={icon ? icon : ""} className="m-auto" width={"48"} />
+                <Icon icon={icon ? icon : ""} className="m-auto" width={"32"} />
               </UnstyledButton>
             </div>
           </HoverCard.Target>
