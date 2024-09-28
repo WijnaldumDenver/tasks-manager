@@ -104,7 +104,6 @@ export default function ActionButton({
           queryKey: ["get-tasks"],
         });
         setForm(null);
-        console.log(form);
       },
       onError: (error) => {
         notifications.show({
@@ -116,8 +115,6 @@ export default function ActionButton({
           ),
           message: `Task "${form?.title}" couldn't be added. Error: ${error}`,
         });
-        setForm(null);
-        console.log(form);
       },
     });
 
@@ -372,7 +369,7 @@ export default function ActionButton({
                   openEdit();
                   handleInputChange(null, true);
                 }}
-                className="w-full h-full"
+                className="w-full h-full flex place-items-center"
               >
                 <Icon icon={icon ? icon : ""} className="m-auto" width={"32"} />
               </UnstyledButton>
@@ -466,7 +463,7 @@ export default function ActionButton({
                 onClick={() => {
                   openDelete();
                 }}
-                className="w-full h-full"
+                className="w-full h-full flex place-items-center"
               >
                 <Icon icon={icon ? icon : ""} className="m-auto" width={"32"} />
               </UnstyledButton>
@@ -538,6 +535,7 @@ export default function ActionButton({
             task.status == "stand_by" && "bg-orange-300",
             task.status == "planning" && "bg-yellow-400"
           ),
+          section: "bg-white",
         }}
         defaultValue={task.status}
         data={taskStatusOptions}

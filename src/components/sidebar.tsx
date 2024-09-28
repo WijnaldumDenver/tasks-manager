@@ -5,16 +5,14 @@ import React from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { UnstyledButton } from "@mantine/core";
 import { auth } from "firebase-nextjs/firebasenextjs-firebase";
+import Link from "next/link";
 
 export default function Sidebar() {
   const sideBarButtons = [
     {
       icon: "clarity:tasks-line",
       label: "Tasks",
-    },
-    {
-      icon: "carbon:settings",
-      label: "Settings",
+      href: "/",
     },
     {
       icon: "ic:round-logout",
@@ -37,7 +35,11 @@ export default function Sidebar() {
           {sideBarButtons.map((button, i) => (
             <div key={i}>
               {button.label !== "Log Out" ? (
-                <SideBarButton icon={button.icon} label={button.label} />
+                <SideBarButton
+                  href="/"
+                  icon={button.icon}
+                  label={button.label}
+                />
               ) : (
                 <LogoutButton>
                   <SideBarButton icon={button.icon} label={button.label} />
@@ -50,15 +52,34 @@ export default function Sidebar() {
     );
 }
 
-function SideBarButton({ icon, label }: { icon: string; label: string }) {
+function SideBarButton({
+  icon,
+  label,
+  href,
+}: {
+  icon: string;
+  label: string;
+  href?: string;
+}) {
   return (
     <div className="flex items-center w-full p-3 rounded-lg text-start leading-tight transition-all hover:bg-blue-50 hover:bg-opacity-80 focus:bg-blue-50 focus:bg-opacity-80 active:bg-blue-50 active:bg-opacity-80 hover:text-blue-900 focus:text-blue-900 active:text-blue-900 outline-none">
-      <UnstyledButton variant="filled" className="flex w-full">
-        <div className="grid place-items-center mr-4">
-          <Icon className="h-5 w-5" icon={icon} />
-        </div>
-        {label}
-      </UnstyledButton>
+      {href ? (
+        <Link href={href ? href : ""} className="flex w-full">
+          <UnstyledButton variant="filled" className="flex w-full">
+            <div className="grid place-items-center mr-4">
+              <Icon className="h-5 w-5" icon={icon} />
+            </div>
+            {label}
+          </UnstyledButton>
+        </Link>
+      ) : (
+        <UnstyledButton variant="filled" className="flex w-full">
+          <div className="grid place-items-center mr-4">
+            <Icon className="h-5 w-5" icon={icon} />
+          </div>
+          {label}
+        </UnstyledButton>
+      )}
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { useGetTasksQuery } from "@/queries/getTasks";
 import { Image, Skeleton, UnstyledButton } from "@mantine/core";
 import { auth } from "../../firebase-app-config";
 import ActionButton from "@/components/TaskActionButtons";
+import Link from "next/link";
 
 export default function Home() {
   const getUser = auth;
@@ -33,7 +34,10 @@ export default function Home() {
                     key={i}
                   >
                     <div className="mt-2 h-full flex w-full">
-                      <UnstyledButton className="w-3/5 my-auto grid grid-cols-2 transition-all hover:scale-[1.01] active:scale-[0.99]">
+                      <Link
+                        href={`/${task.id}`}
+                        className="w-3/5 my-auto grid grid-cols-2 transition-all hover:scale-[1.01] active:scale-[0.99]"
+                      >
                         <span className="font-bold text-xl max-w-[80%] line-clamp-1">
                           {task?.title}
                         </span>
@@ -47,7 +51,7 @@ export default function Home() {
                             }
                           )}
                         </span>
-                      </UnstyledButton>
+                      </Link>
                       <div className="w-2/5 gap-4 grid grid-cols-3">
                         <ActionButton type="status" task={task} />
                         <ActionButton
