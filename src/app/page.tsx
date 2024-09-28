@@ -1,7 +1,7 @@
 "use client";
 
 import { useGetTasksQuery } from "@/queries/getTasks";
-import { Image, Skeleton } from "@mantine/core";
+import { Image, Skeleton, UnstyledButton } from "@mantine/core";
 import { auth } from "../../firebase-app-config";
 import ActionButton from "@/components/TaskActionButtons";
 
@@ -18,46 +18,58 @@ export default function Home() {
               <Image fit="cover" src={"/no-tasks.png"} />
             </div>
           ) : (
-            <div className="w-full flex flex-col gap-4 max-h-[650px] overflow-auto bg-gray-100 rounded-tl-xl shadow-[inset_0px_0px_16px_1px_#AAAAAA] p-4 rounded-br-xl">
-              {tasks?.map((task: any, i: any) => (
-                <div
-                  className="w-full h-full max-h-64 bg-white rounded-tl-xl p-4 rounded-br-xl"
-                  key={i}
-                >
-                  <div className="mt-2 h-full flex w-full">
-                    <div className="w-3/5 my-auto grid grid-cols-2">
-                      <span className="font-bold text-xl max-w-[80%] line-clamp-1">
-                        {task?.title}
-                      </span>
-                      <span className="text-xl opacity-50">
-                        {new Date(task?.due_date).toLocaleDateString("en-US", {
-                          year: "numeric",
-                          month: "long",
-                          day: "numeric",
-                        })}
-                      </span>
-                    </div>
-                    <div className="w-2/5 gap-4 grid grid-cols-3">
-                      <ActionButton type="status" task={task} />
-                      <ActionButton
-                        type="edit"
-                        task={task}
-                        icon="tdesign:edit"
-                        description="Edit"
-                        className="rounded-br-xl rounded-tl-xl transition-all border-2 border-gray-300 hover:text-primary-900 hover:bg-primary-200 hover:border-primary-800 active:scale-95"
-                      />
-                      <ActionButton
-                        type="delete"
-                        task={task}
-                        icon="ic:baseline-delete"
-                        description="Delete"
-                        className="rounded-br-xl rounded-tl-xl transition-all border-2 border-gray-300 hover:text-red-950 hover:bg-red-400 hover:border-red-500 active:scale-95"
-                      />
+            <>
+              <div className="flex px-8 w-full">
+                <div className="w-3/5 grid grid-cols-2">
+                  <span>Title</span>
+                  <span>Due Date</span>
+                </div>
+                <span>Status</span>
+              </div>
+              <div className="w-full flex flex-col gap-4 max-h-[650px] overflow-auto bg-gray-100 rounded-tl-xl shadow-[inset_0px_0px_16px_1px_#AAAAAA] p-4 rounded-br-xl">
+                {tasks?.map((task: any, i: any) => (
+                  <div
+                    className="w-full h-full max-h-64 bg-white rounded-tl-xl p-4 rounded-br-xl"
+                    key={i}
+                  >
+                    <div className="mt-2 h-full flex w-full">
+                      <UnstyledButton className="w-3/5 my-auto grid grid-cols-2 transition-all hover:scale-[1.01] active:scale-[0.99]">
+                        <span className="font-bold text-xl max-w-[80%] line-clamp-1">
+                          {task?.title}
+                        </span>
+                        <span className="text-xl opacity-50">
+                          {new Date(task?.due_date).toLocaleDateString(
+                            "en-US",
+                            {
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                            }
+                          )}
+                        </span>
+                      </UnstyledButton>
+                      <div className="w-2/5 gap-4 grid grid-cols-3">
+                        <ActionButton type="status" task={task} />
+                        <ActionButton
+                          type="edit"
+                          task={task}
+                          icon="tdesign:edit"
+                          description="Edit"
+                          className="rounded-br-xl rounded-tl-xl transition-all border-2 border-gray-300 hover:text-primary-900 hover:bg-primary-200 hover:border-primary-800 active:scale-95"
+                        />
+                        <ActionButton
+                          type="delete"
+                          task={task}
+                          icon="ic:baseline-delete"
+                          description="Delete"
+                          className="rounded-br-xl rounded-tl-xl transition-all border-2 border-gray-300 hover:text-red-950 hover:bg-red-400 hover:border-red-500 active:scale-95"
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            </>
           )}
         </Skeleton>
       </div>

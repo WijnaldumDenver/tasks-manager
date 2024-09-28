@@ -63,7 +63,15 @@ export default function ActionButton({
 
   if (type == "add") {
     const [opened, { open, close }] = useDisclosure(false);
-    const [form, setForm] = useState(Object);
+    const [form, setForm] = useState<any | null>(
+      {
+        title: "",
+        due_date: "",
+        status: "",
+        description: "",
+      } || null
+    );
+    const [submitHovered, setSubmitHovered] = useState(false);
     const handleInputChange = (e: any) => {
       const { name, value } = e.target;
 
@@ -89,12 +97,14 @@ export default function ActionButton({
               <Icon width={"32px"} icon={"simple-line-icons:check"} />
             </div>
           ),
-          message: `Task "${form.title}" has been added.`,
+          message: `Task "${form?.title}" has been added.`,
         });
         close();
         QueryClient.invalidateQueries({
           queryKey: ["get-tasks"],
         });
+        setForm(null);
+        console.log(form);
       },
       onError: (error) => {
         notifications.show({
@@ -104,23 +114,28 @@ export default function ActionButton({
               <Icon width={"32px"} icon={"healthicons:no-outline"} />
             </div>
           ),
-          message: `Task "${form.title}" couldn't be added. Error: ${error}`,
+          message: `Task "${form?.title}" couldn't be added. Error: ${error}`,
         });
+        setForm(null);
+        console.log(form);
       },
     });
 
     const handleSubmit = () => {
-      if (form.title && form.description) {
+      if (form?.title && form?.description) {
         mutation.mutate(form as any);
       }
     };
-
     return (
       <>
         <Modal
           title="Create a Task"
           opened={opened}
-          onClose={close}
+          onClose={() => {
+            close();
+            setSubmitHovered(false);
+            setForm(null);
+          }}
           centered
           classNames={{ root: "text-black" }}
           overlayProps={{
@@ -129,34 +144,45 @@ export default function ActionButton({
           }}
         >
           <div className="grid grid-cols-2 gap-4 mb-4">
-            <InputWrapper className="col-span-1" label="Title">
+            <InputWrapper
+              error={!form?.title && submitHovered && "Write the title"}
+              className="col-span-1"
+              label="Title"
+            >
               <Input
                 type="text"
                 name="title"
-                value={form.title}
+                value={form?.title}
                 onChange={(e) => handleInputChange(e)}
               />
             </InputWrapper>
-            <InputWrapper label="Due Date">
+            <InputWrapper
+              error={!form?.due_date && submitHovered && "Select a due date"}
+              label="Due Date"
+            >
               <Input
                 className="col-span-1"
                 type="date"
                 name="due_date"
-                value={form.due_date}
+                value={form?.due_date}
                 onChange={(e) => handleInputChange(e)}
               />
             </InputWrapper>
             <Textarea
               className="col-span-2"
+              error={
+                !form?.description && submitHovered && "Write a description"
+              }
               label="Description"
               name="description"
-              value={form.description}
+              value={form?.description}
               autosize
               onChange={(e) => handleInputChange(e)}
             />
             <NativeSelect
               name="status"
-              value={form.status}
+              error={!form?.status && submitHovered && "Select a status"}
+              value={!!form?.status ? form?.status : ""}
               data={taskStatusOptions}
               label="Task Status"
               onChange={(e) => handleInputChange(e)}
@@ -165,14 +191,20 @@ export default function ActionButton({
           <div
             className={clsx(
               "rounded-tl-xl mb-4 w-16 h-12 transition-all border-2 border-gray-300 rounded-br-xl",
-              form.title && form.description
+              form?.title && form?.description
                 ? "hover:text-primary-900 hover:bg-primary-200 hover:border-primary-800 active:scale-95"
                 : "bg-gray-100 text-gray-300"
             )}
           >
             <UnstyledButton
-              disabled={!form.description || !form.title}
-              onClick={handleSubmit}
+              onClick={() =>
+                !form?.description ||
+                !form?.title ||
+                !form?.due_date ||
+                !form?.status
+                  ? setSubmitHovered(true)
+                  : handleSubmit()
+              }
               className="w-full h-full"
             >
               <Icon
@@ -183,14 +215,17 @@ export default function ActionButton({
             </UnstyledButton>
           </div>
         </Modal>
-        <div className="rounded-tl-xl rounded-br-xl active:scale-95 transition-all mb-4 w-32 h-24 border-2 border-gray-300 hover:text-primary-900 hover:bg-primary-200 hover:border-primary-800">
-          <UnstyledButton onClick={open} className="w-full h-full">
-            <Icon
-              icon="gridicons:add-outline"
-              className="m-auto"
-              width={"48"}
-            />
-          </UnstyledButton>
+        <div className="flex mb-4 place-items-center">
+          <div className="rounded-tl-xl mr-4 rounded-br-xl w-32 h-12 active:scale-95 transition-all border-2 border-gray-300 hover:text-primary-900 hover:bg-primary-200 hover:border-primary-800">
+            <UnstyledButton onClick={open} className="w-full h-full">
+              <Icon
+                icon="gridicons:add-outline"
+                className="m-auto"
+                width={"32"}
+              />
+            </UnstyledButton>
+          </div>
+          <span className="font-bold text-lg">Add a task</span>
         </div>
       </>
     );
