@@ -9,6 +9,7 @@ import {
   Input,
   InputWrapper,
   Modal,
+  NativeSelect,
   Skeleton,
   Text,
   Textarea,
@@ -28,6 +29,14 @@ import {
 } from "firebase/firestore";
 import { auth, db } from "../../firebase-app-config";
 import { notifications } from "@mantine/notifications";
+
+const taskStatusOptions = [
+  { label: "Not Started", value: "not_started" },
+  { label: "Planning", value: "planning" },
+  { label: "Started", value: "started" },
+  { label: "Stand By", value: "stand_by" },
+  { label: "Completed", value: "completed" },
+];
 
 export default function Home() {
   const getUser = auth;
@@ -54,7 +63,7 @@ export default function Home() {
                       <p className="mt-2">{task?.description}</p>
                     </div>
                     <div className="w-2/5 gap-4 grid grid-cols-3">
-                      <StatusButton task={task} />
+                      <StatusSelection task={task} />
                       <EditButton
                         type="edit"
                         task={task}
@@ -85,18 +94,14 @@ function AddTaskButton() {
   const user = auth;
   const QueryClient = useQueryClient();
   const [opened, { open, close }] = useDisclosure(false);
-  const [form, setForm] = useState({
-    title: "",
-    description: "",
-    status: false,
-    user_id: user.currentUser?.uid,
-  });
+  const [form, setForm] = useState(Object);
   const handleInputChange = (e: any) => {
-    const { name, value, type, checked } = e.target;
+    const { name, value } = e.target;
 
-    setForm((prevForm) => ({
+    setForm((prevForm: typeof form) => ({
       ...prevForm,
-      [name]: type === "checkbox" ? checked : value,
+      user_id: user.currentUser?.uid,
+      [name]: value,
     }));
   };
   const mutation = useMutation({
@@ -155,7 +160,7 @@ function AddTaskButton() {
         }}
       >
         <div className="grid grid-cols-2 gap-4 mb-4">
-          <InputWrapper className="col-span-1" label="title">
+          <InputWrapper className="col-span-1" label="Title">
             <Input
               type="text"
               name="title"
@@ -163,18 +168,29 @@ function AddTaskButton() {
               onChange={(e) => handleInputChange(e)}
             />
           </InputWrapper>
-          <InputWrapper className="col-span-2" label="description">
-            <Textarea
-              name="description"
-              value={form.description}
-              autosize
+          <InputWrapper label="Due Date">
+            <Input
+              className="col-span-1"
+              type="date"
+              name="due_date"
+              value={form.due_date}
               onChange={(e) => handleInputChange(e)}
             />
           </InputWrapper>
-          <Checkbox
+          <Textarea
+            className="col-span-2"
+            label="Description"
+            name="description"
+            value={form.description}
+            autosize
+            onChange={(e) => handleInputChange(e)}
+          />
+          <NativeSelect
             name="status"
-            checked={form.status}
-            label="Task completed?"
+            defaultValue={"not_started"}
+            value={form.status}
+            data={taskStatusOptions}
+            label="Task Status"
             onChange={(e) => handleInputChange(e)}
           />
         </div>
@@ -212,7 +228,6 @@ function EditButton({
   className,
   description,
   icon,
-  type,
   task,
 }: {
   className?: string;
@@ -222,37 +237,25 @@ function EditButton({
   task: {
     id: string;
     user_id: string;
-    description: string;
-    title: string;
-    status: boolean;
+    [key: string]: any;
   };
 }) {
   const user = auth;
   const QueryClient = useQueryClient();
   const [opened, { open, close }] = useDisclosure(false);
-  const [form, setForm] = useState({
-    title: "",
-    description: "",
-    status: false,
-    user_id: user.currentUser?.uid,
-  });
+  const [form, setForm] = useState(Object);
   const handleInputChange = (e?: any, fill?: boolean) => {
     if (!fill) {
-      const { name, value, type, checked } = e.target;
-      setForm((prevForm) => ({
+      const { name, value } = e.target;
+      setForm((prevForm: typeof form) => ({
         ...prevForm,
-        [name]: type === "checkbox" ? checked : value,
+        [name]: value,
       }));
     } else {
-      setForm((prevForm) => ({
-        ...prevForm,
-        user_id: task.user_id,
-        description: task.description,
-        title: task.title,
-        status: task.status,
+      setForm(() => ({
+        ...task,
       }));
     }
-    console.log(form);
   };
   const mutation = useMutation({
     mutationFn: async (Task) => {
@@ -306,7 +309,7 @@ function EditButton({
         }}
       >
         <div className="grid grid-cols-2 gap-4 mb-4">
-          <InputWrapper className="col-span-1" label="title">
+          <InputWrapper className="col-span-1" label="Title">
             <Input
               type="text"
               name="title"
@@ -314,18 +317,29 @@ function EditButton({
               onChange={(e) => handleInputChange(e)}
             />
           </InputWrapper>
-          <InputWrapper className="col-span-2" label="description">
-            <Textarea
-              name="description"
-              value={form.description}
-              autosize
+          <InputWrapper label="Due Date">
+            <Input
+              className="col-span-1"
+              type="date"
+              name="due_date"
+              value={form.due_date}
               onChange={(e) => handleInputChange(e)}
             />
           </InputWrapper>
-          <Checkbox
+          <Textarea
+            className="col-span-2"
+            label="Description"
+            name="description"
+            value={form.description}
+            autosize
+            onChange={(e) => handleInputChange(e)}
+          />
+          <NativeSelect
             name="status"
-            checked={form.status}
-            label="Task completed?"
+            defaultValue={"not_started"}
+            value={form.status}
+            data={taskStatusOptions}
+            label="Task Status"
             onChange={(e) => handleInputChange(e)}
           />
         </div>
@@ -477,12 +491,14 @@ function DeleteButton({
   );
 }
 
-function StatusButton({ task }: { task: any }) {
+function StatusSelection({ task }: { task: any }) {
   const QueryClient = useQueryClient();
-  const updatedTask = { ...task, status: !task.status };
   const mutation = useMutation({
-    mutationFn: async () => {
-      const docRef = await updateDoc(doc(db, "tasks", task.id), updatedTask);
+    mutationFn: async (e: any) => {
+      const docRef = await updateDoc(doc(db, "tasks", task.id), {
+        ...task,
+        status: e.target.value,
+      });
       return docRef;
     },
     onSuccess: () => {
@@ -511,18 +527,24 @@ function StatusButton({ task }: { task: any }) {
       });
     },
   });
-  const handleComplete = () => {
-    mutation.mutate();
+  const handleComplete = (e: any) => {
+    mutation.mutate(e);
   };
   return (
-    <UnstyledButton
-      className={clsx(
-        "rounded-br-xl rounded-tl-xl m-2 transition-all hover:scale-105 text-center font-bold text-xl active:scale-95",
-        task.status ? "bg-primary-600" : "bg-red-400"
-      )}
-      onClick={handleComplete}
-    >
-      {task.status ? "Completed" : "Unfinished"}
-    </UnstyledButton>
+    <NativeSelect
+      className="rounded-br-xl rounded-tl-xl mx-2 my-auto transition-all hover:scale-105 text-center font-bold text-xl active:scale-95"
+      classNames={{
+        input: clsx(
+          task.status == "completed" && "bg-primary-600",
+          task.status == "started" && "bg-yellow-100",
+          task.status == "not_started" && "bg-red-400",
+          task.status == "stand_by" && "bg-orange-300",
+          task.status == "planning" && "bg-yellow-400"
+        ),
+      }}
+      defaultValue={task.status}
+      data={taskStatusOptions}
+      onChange={handleComplete}
+    />
   );
 }
