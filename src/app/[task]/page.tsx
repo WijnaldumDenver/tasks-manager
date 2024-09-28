@@ -1,10 +1,12 @@
 "use client";
 
 import { useGetTaskPageQuery, useGetTasksQuery } from "@/queries/getTasks";
-import { Image, Skeleton, UnstyledButton } from "@mantine/core";
+import { Button, Image, Skeleton, UnstyledButton } from "@mantine/core";
 import { auth } from "@/../firebase-app-config";
 import ActionButton from "@/components/TaskActionButtons";
 import { useEffect, useState } from "react";
+import Link from "next/link";
+import { Icon } from "@iconify/react/dist/iconify.js";
 
 export default function TaskPage() {
   const getUser = auth;
@@ -22,7 +24,15 @@ export default function TaskPage() {
   }) as any;
 
   return (
-    <section className="max-h-screen w-full m-20">
+    <section className="max-h-screen w-full mx-20 mb-32 mt-20">
+      <Link
+        href="/"
+        className="bg-gray-100 flex mb-4 text-gray-400 rounded-tl-xl w-16 h-12 transition-all border-2 border-gray-300 rounded-br-xl hover:scale-105 active:scale-95"
+      >
+        <UnstyledButton className="w-16 h-12">
+          <Icon width={32} className="m-auto" icon="icon-park-outline:back" />
+        </UnstyledButton>
+      </Link>
       <Skeleton className="h-full max-h-full" visible={!task}>
         <div className="bg-white p-4 h-full max-h-full rounded-tl-xl rounded-br-xl w-full shadow-[0px_0px_16px_1px_#AAAAAA]">
           <span className="text-black font-bold text-6xl line-clamp-2 w-1/2 mb-4">
