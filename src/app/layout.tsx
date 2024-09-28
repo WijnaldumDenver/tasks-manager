@@ -6,7 +6,7 @@ import "@mantine/notifications/styles.css";
 import Provider from "../util/Providers";
 import { FirebaseNextJSProvider } from "firebase-nextjs/client/auth";
 import { MantineProvider } from "@mantine/core";
-import Sidebar from "@/components/sidebar";
+import Sidebar from "@/components/Sidebar";
 import { Notifications } from "@mantine/notifications";
 
 const geistSans = localFont({
