@@ -361,6 +361,7 @@ export function DeleteButton({ task }: ActionButtonProps) {
 
 export function StatusButton({ task }: ActionButtonProps) {
   const QueryClient = useQueryClient();
+  const [status, setStatus] = useState("");
   const mutationStatus = useMutation({
     mutationFn: async (e: any) => {
       const docRef = await updateDoc(doc(db, "tasks", task?.id as string), {
@@ -370,6 +371,10 @@ export function StatusButton({ task }: ActionButtonProps) {
       return docRef;
     },
     onSuccess: () => {
+      QueryClient.invalidateQueries({
+        queryKey: ["get-tasks"],
+        refetchType: "all",
+      });
       notifications.show({
         color: "lime",
         icon: (
@@ -378,10 +383,6 @@ export function StatusButton({ task }: ActionButtonProps) {
           </div>
         ),
         message: `Task "${task?.title}" has been completed.`,
-      });
-      QueryClient.invalidateQueries({
-        queryKey: ["get-tasks"],
-        refetchType: "all",
       });
     },
     onError: (error) => {
@@ -399,22 +400,31 @@ export function StatusButton({ task }: ActionButtonProps) {
   const handleStatus = (e: any) => {
     mutationStatus.mutate(e);
   };
+  if (!task) return null;
   return (
     <NativeSelect
       className="rounded-br-xl rounded-tl-xl mx-2 my-auto transition-all hover:scale-105 text-center font-bold text-xl active:scale-95"
       classNames={{
         input: clsx(
-          task?.status == "completed" && "bg-primary-600",
-          task?.status == "started" && "bg-yellow-100",
-          task?.status == "not_started" && "bg-red-400",
-          task?.status == "stand_by" && "bg-orange-300",
-          task?.status == "planning" && "bg-yellow-400"
+          status == "" && task?.status == "completed" && "bg-primary-600",
+          status == "" && task?.status == "started" && "bg-yellow-100",
+          status == "" && task?.status == "not_started" && "bg-red-400",
+          status == "" && task?.status == "stand_by" && "bg-orange-300",
+          status == "" && task?.status == "planning" && "bg-yellow-400",
+          status == "completed" && "bg-primary-600",
+          status == "started" && "bg-yellow-100",
+          status == "not_started" && "bg-red-400",
+          status == "stand_by" && "bg-orange-300",
+          status == "planning" && "bg-yellow-400"
         ),
         section: "bg-white",
       }}
       defaultValue={task?.status}
       data={taskStatusOptions}
-      onChange={handleStatus}
+      onChange={(e) => {
+        handleStatus(e);
+        setStatus(e.target.value);
+      }}
     />
   );
 }
