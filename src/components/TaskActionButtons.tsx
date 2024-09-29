@@ -12,7 +12,7 @@ import {
   collection,
   addDoc,
 } from "firebase/firestore";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { auth, db } from "../../firebase-app-config";
 import TaskForm from "./TaskForm";
 
@@ -164,6 +164,11 @@ export function EditButton({ task }: ActionButtonProps) {
   const [openedEdit, { open: openEdit, close: closeEdit }] =
     useDisclosure(false);
   const [formEdit, setFormEdit] = useState(Object);
+  const [currentPath, setCurrentPath] = useState("");
+
+  useEffect(() => {
+    setCurrentPath(window.location.pathname);
+  }, []);
   const handleInputChangeEdit = (e?: any, fill?: boolean) => {
     if (!fill) {
       const { name, value } = e.target;
@@ -196,10 +201,17 @@ export function EditButton({ task }: ActionButtonProps) {
         message: `Task "${formEdit.title}" has been updated.`,
       });
       closeEdit();
-      QueryClient.invalidateQueries({
-        queryKey: ["get-tasks"],
-        refetchType: "all",
-      });
+      if (currentPath == "/") {
+        QueryClient.invalidateQueries({
+          queryKey: ["get-tasks"],
+          refetchType: "all",
+        });
+      } else {
+        QueryClient.invalidateQueries({
+          queryKey: ["get-task", task?.id],
+          refetchType: "all",
+        });
+      }
     },
     onError: (error) => {
       notifications.show({
@@ -272,6 +284,11 @@ export function DeleteButton({ task }: ActionButtonProps) {
   const QueryClient = useQueryClient();
   const [openedDelete, { open: openDelete, close: closeDelete }] =
     useDisclosure(false);
+  const [currentPath, setCurrentPath] = useState("");
+
+  useEffect(() => {
+    setCurrentPath(window.location.pathname);
+  }, []);
   const deleteMutation = useMutation({
     mutationFn: async () => {
       const docRef = await deleteDoc(
@@ -290,10 +307,16 @@ export function DeleteButton({ task }: ActionButtonProps) {
         message: `Task "${task?.title}" has been deleted succesfully.`,
       });
       closeDelete();
-      QueryClient.invalidateQueries({
-        queryKey: ["get-tasks"],
-        refetchType: "all",
-      });
+      if (currentPath == "/") {
+        QueryClient.invalidateQueries({
+          queryKey: ["get-tasks"],
+          refetchType: "all",
+        });
+      } else {
+        if (typeof window !== "undefined") {
+          window.location.href = "/";
+        }
+      }
     },
     onError: (error) => {
       notifications.show({
@@ -382,7 +405,7 @@ export function StatusButton({ task }: ActionButtonProps) {
             <Icon width={"32px"} icon={"simple-line-icons:check"} />
           </div>
         ),
-        message: `Task "${task?.title}" has been completed.`,
+        message: statusResponses({ task, status }),
       });
     },
     onError: (error) => {
@@ -427,4 +450,19 @@ export function StatusButton({ task }: ActionButtonProps) {
       }}
     />
   );
+}
+
+function statusResponses({ task, status }: { task: any; status: string }) {
+  switch (status) {
+    case "completed":
+      return `Task "${task?.title}" has been completed.`;
+    case "started":
+      return `Task "${task?.title}" has been set to started.`;
+    case "not_started":
+      return `Task "${task?.title}" has been set to not started.`;
+    case "stand_by":
+      return `Task "${task?.title}" has been set on stand by.`;
+    case "planning":
+      return `Task "${task?.title}" has been set to planning.`;
+  }
 }
