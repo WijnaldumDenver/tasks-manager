@@ -1,9 +1,14 @@
 "use client";
 
 import { useGetTasksQuery } from "@/queries/getTasks";
-import { Image, Skeleton, UnstyledButton } from "@mantine/core";
+import { Image, Skeleton } from "@mantine/core";
 import { auth } from "../../firebase-app-config";
-import ActionButton from "@/components/TaskActionButtons";
+import {
+  AddButton,
+  DeleteButton,
+  EditButton,
+  StatusButton,
+} from "@/components/TaskActionButtons";
 import Link from "next/link";
 
 export default function Home() {
@@ -12,7 +17,7 @@ export default function Home() {
   return (
     <section className="max-h-screen w-full m-20">
       <div className="bg-white p-4 min-h-full max-h-full rounded-tl-xl rounded-br-xl w-full shadow-[0px_0px_16px_1px_#AAAAAA]">
-        <ActionButton type="add" />
+        <AddButton />
         <Skeleton visible={!tasks}>
           {!tasks || tasks.length == 0 ? (
             <div className="w-64 mx-auto my-[10%]">
@@ -53,21 +58,9 @@ export default function Home() {
                         </span>
                       </Link>
                       <div className="w-2/5 gap-4 grid grid-cols-3">
-                        <ActionButton type="status" task={task} />
-                        <ActionButton
-                          type="edit"
-                          task={task}
-                          icon="tdesign:edit"
-                          description="Edit"
-                          className="rounded-br-xl rounded-tl-xl transition-all border-2 border-gray-300 hover:text-primary-900 hover:bg-primary-200 hover:border-primary-800 active:scale-95"
-                        />
-                        <ActionButton
-                          type="delete"
-                          task={task}
-                          icon="ic:baseline-delete"
-                          description="Delete"
-                          className="rounded-br-xl rounded-tl-xl transition-all border-2 border-gray-300 hover:text-red-950 hover:bg-red-400 hover:border-red-500 active:scale-95"
-                        />
+                        <StatusButton task={task} />
+                        <EditButton task={task} />
+                        <DeleteButton task={task} />
                       </div>
                     </div>
                   </div>

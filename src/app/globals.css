@@ -25,3 +25,10 @@ body {
     text-wrap: balance;
   }
 }
+
+.rsw-ce {
+  max-height: 480px;
+  min-height: 480px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}

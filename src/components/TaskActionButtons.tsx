@@ -1,15 +1,6 @@
 import { taskStatusOptions } from "@/util/Variables";
 import { Icon } from "@iconify/react/dist/iconify.js";
-import {
-  Modal,
-  InputWrapper,
-  Input,
-  Textarea,
-  NativeSelect,
-  UnstyledButton,
-  HoverCard,
-  Text,
-} from "@mantine/core";
+import { Modal, NativeSelect, UnstyledButton } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
@@ -23,524 +14,407 @@ import {
 } from "firebase/firestore";
 import { useState } from "react";
 import { auth, db } from "../../firebase-app-config";
+import TaskForm from "./TaskForm";
 
 type ActionButtonProps = {
   className?: string;
   description?: string;
   icon?: string;
-  type: "edit" | "delete" | "status" | "add";
   task?: {
     id: string;
     user_id: string;
     [key: string]: any;
   };
-} & (
-  | { type: "add"; task?: never }
-  | {
-      type: "edit" | "delete" | "status";
-      task: { id: string; user_id: string; [key: string]: any };
-    }
-);
+};
 
-export default function ActionButton({
-  className,
-  description,
-  icon,
-  type,
-  task,
-}: ActionButtonProps) {
+//  $$$$$$\        $$\       $$\       $$\                   $$\     $$\
+//  $$  __$$\       $$ |      $$ |      $$ |                  $$ |    $$ |
+//  $$ /  $$ | $$$$$$$ | $$$$$$$ |      $$$$$$$\  $$\   $$\ $$$$$$\ $$$$$$\    $$$$$$\  $$$$$$$\
+//  $$$$$$$$ |$$  __$$ |$$  __$$ |      $$  __$$\ $$ |  $$ |\_$$  _|\_$$  _|  $$  __$$\ $$  __$$\
+//  $$  __$$ |$$ /  $$ |$$ /  $$ |      $$ |  $$ |$$ |  $$ |  $$ |    $$ |    $$ /  $$ |$$ |  $$ |
+//  $$ |  $$ |$$ |  $$ |$$ |  $$ |      $$ |  $$ |$$ |  $$ |  $$ |$$\ $$ |$$\ $$ |  $$ |$$ |  $$ |
+//  $$ |  $$ |\$$$$$$$ |\$$$$$$$ |      $$$$$$$  |\$$$$$$  |  \$$$$  |\$$$$  |\$$$$$$  |$$ |  $$ |
+//  \__|  \__| \_______| \_______|      \_______/  \______/    \____/  \____/  \______/ \__|  \__|
+
+export function AddButton() {
   const user = auth;
   const QueryClient = useQueryClient();
+  const [submitHovered, setSubmitHovered] = useState(false);
 
-  //  $$$$$$\        $$\       $$\       $$\                   $$\     $$\
-  //  $$  __$$\       $$ |      $$ |      $$ |                  $$ |    $$ |
-  //  $$ /  $$ | $$$$$$$ | $$$$$$$ |      $$$$$$$\  $$\   $$\ $$$$$$\ $$$$$$\    $$$$$$\  $$$$$$$\
-  //  $$$$$$$$ |$$  __$$ |$$  __$$ |      $$  __$$\ $$ |  $$ |\_$$  _|\_$$  _|  $$  __$$\ $$  __$$\
-  //  $$  __$$ |$$ /  $$ |$$ /  $$ |      $$ |  $$ |$$ |  $$ |  $$ |    $$ |    $$ /  $$ |$$ |  $$ |
-  //  $$ |  $$ |$$ |  $$ |$$ |  $$ |      $$ |  $$ |$$ |  $$ |  $$ |$$\ $$ |$$\ $$ |  $$ |$$ |  $$ |
-  //  $$ |  $$ |\$$$$$$$ |\$$$$$$$ |      $$$$$$$  |\$$$$$$  |  \$$$$  |\$$$$  |\$$$$$$  |$$ |  $$ |
-  //  \__|  \__| \_______| \_______|      \_______/  \______/    \____/  \____/  \______/ \__|  \__|
+  const [opened, { open, close }] = useDisclosure(false);
+  const [form, setForm] = useState<any>({
+    title: "",
+    due_date: "",
+    status: "not_started",
+    description: "",
+  });
 
-  if (type == "add") {
-    const [opened, { open, close }] = useDisclosure(false);
-    const [form, setForm] = useState<any | null>(
-      {
+  const handleInputChange = (e: any) => {
+    const { name, value } = e.target;
+
+    setForm((prevForm: typeof form) => ({
+      ...prevForm,
+      user_id: user.currentUser?.uid,
+      [name]: value,
+    }));
+  };
+  const mutation = useMutation({
+    mutationFn: async (newTask) => {
+      const docRef = await addDoc(
+        collection(db as any, "tasks"),
+        newTask as any
+      );
+      return docRef.id;
+    },
+    onSuccess: () => {
+      notifications.show({
+        color: "lime",
+        icon: (
+          <div className="font-bold">
+            <Icon width={"32px"} icon={"simple-line-icons:check"} />
+          </div>
+        ),
+        message: `Task "${form?.title}" has been added.`,
+      });
+      close();
+      QueryClient.invalidateQueries({
+        queryKey: ["get-tasks"],
+        refetchType: "all",
+      });
+      setForm({
         title: "",
         due_date: "",
-        status: "",
+        status: "not_started",
         description: "",
-      } || null
-    );
-    const [submitHovered, setSubmitHovered] = useState(false);
-    const handleInputChange = (e: any) => {
-      const { name, value } = e.target;
+      });
+    },
+    onError: (error) => {
+      notifications.show({
+        color: "red",
+        icon: (
+          <div className="font-bold">
+            <Icon width={"32px"} icon={"healthicons:no-outline"} />
+          </div>
+        ),
+        message: `Task "${form?.title}" couldn't be added. Error: ${error}`,
+      });
+    },
+  });
 
-      setForm((prevForm: typeof form) => ({
+  const handleSubmit = () => {
+    mutation.mutate(form as any);
+  };
+  return (
+    <>
+      <Modal
+        title="Create a Task"
+        size={"72%"}
+        opened={opened}
+        onClose={() => {
+          close();
+          setSubmitHovered(false);
+          setForm(null);
+        }}
+        centered
+        classNames={{ root: "text-black" }}
+        overlayProps={{
+          backgroundOpacity: 0.55,
+          blur: 3,
+        }}
+      >
+        <TaskForm
+          form={form}
+          handleOnChange={(e: any) => handleInputChange(e)}
+          handleOnSubmit={() =>
+            !form?.description || !form?.title || !form?.due_date
+              ? setSubmitHovered(true)
+              : handleSubmit()
+          }
+          submitHovered={submitHovered}
+        />
+      </Modal>
+      <div className="flex mb-4 place-items-center">
+        <div className="rounded-tl-xl mr-4 rounded-br-xl w-32 h-12 active:scale-95 transition-all border-2 border-gray-300 hover:text-primary-900 hover:bg-primary-200 hover:border-primary-800">
+          <UnstyledButton onClick={open} className="w-full h-full">
+            <Icon
+              icon="gridicons:add-outline"
+              className="m-auto"
+              width={"32"}
+            />
+          </UnstyledButton>
+        </div>
+        <span className="font-bold text-lg">Add a task</span>
+      </div>
+    </>
+  );
+}
+
+// $$$$$$$$\      $$\ $$\   $$\           $$\                   $$\     $$\
+// $$  _____|     $$ |\__|  $$ |          $$ |                  $$ |    $$ |
+// $$ |      $$$$$$$ |$$\ $$$$$$\         $$$$$$$\  $$\   $$\ $$$$$$\ $$$$$$\    $$$$$$\  $$$$$$$\
+// $$$$$\   $$  __$$ |$$ |\_$$  _|        $$  __$$\ $$ |  $$ |\_$$  _|\_$$  _|  $$  __$$\ $$  __$$\
+// $$  __|  $$ /  $$ |$$ |  $$ |          $$ |  $$ |$$ |  $$ |  $$ |    $$ |    $$ /  $$ |$$ |  $$ |
+// $$ |     $$ |  $$ |$$ |  $$ |$$\       $$ |  $$ |$$ |  $$ |  $$ |$$\ $$ |$$\ $$ |  $$ |$$ |  $$ |
+// $$$$$$$$\\$$$$$$$ |$$ |  \$$$$  |      $$$$$$$  |\$$$$$$  |  \$$$$  |\$$$$  |\$$$$$$  |$$ |  $$ |
+// \________|\_______|\__|   \____/       \_______/  \______/    \____/  \____/  \______/ \__|  \__|
+
+export function EditButton({ task }: ActionButtonProps) {
+  const QueryClient = useQueryClient();
+  const [submitHovered, setSubmitHovered] = useState(false);
+  const [openedEdit, { open: openEdit, close: closeEdit }] =
+    useDisclosure(false);
+  const [formEdit, setFormEdit] = useState(Object);
+  const handleInputChangeEdit = (e?: any, fill?: boolean) => {
+    if (!fill) {
+      const { name, value } = e.target;
+      setFormEdit((prevForm: typeof formEdit) => ({
         ...prevForm,
-        user_id: user.currentUser?.uid,
         [name]: value,
       }));
-    };
-    const mutation = useMutation({
-      mutationFn: async (newTask) => {
-        const docRef = await addDoc(
-          collection(db as any, "tasks"),
-          newTask as any
-        );
-        return docRef.id;
-      },
-      onSuccess: () => {
-        notifications.show({
-          color: "lime",
-          icon: (
-            <div className="font-bold">
-              <Icon width={"32px"} icon={"simple-line-icons:check"} />
-            </div>
-          ),
-          message: `Task "${form?.title}" has been added.`,
-        });
-        close();
-        QueryClient.invalidateQueries({
-          queryKey: ["get-tasks"],
-        });
-        setForm(null);
-      },
-      onError: (error) => {
-        notifications.show({
-          color: "red",
-          icon: (
-            <div className="font-bold">
-              <Icon width={"32px"} icon={"healthicons:no-outline"} />
-            </div>
-          ),
-          message: `Task "${form?.title}" couldn't be added. Error: ${error}`,
-        });
-      },
-    });
-
-    const handleSubmit = () => {
-      if (form?.title && form?.description) {
-        mutation.mutate(form as any);
-      }
-    };
-    return (
-      <>
-        <Modal
-          title="Create a Task"
-          opened={opened}
-          onClose={() => {
-            close();
-            setSubmitHovered(false);
-            setForm(null);
-          }}
-          centered
-          classNames={{ root: "text-black" }}
-          overlayProps={{
-            backgroundOpacity: 0.55,
-            blur: 3,
-          }}
-        >
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            <InputWrapper
-              error={!form?.title && submitHovered && "Write the title"}
-              className="col-span-1"
-              label="Title"
-            >
-              <Input
-                type="text"
-                name="title"
-                value={form?.title}
-                onChange={(e) => handleInputChange(e)}
-              />
-            </InputWrapper>
-            <InputWrapper
-              error={!form?.due_date && submitHovered && "Select a due date"}
-              label="Due Date"
-            >
-              <Input
-                className="col-span-1"
-                type="date"
-                name="due_date"
-                value={form?.due_date}
-                onChange={(e) => handleInputChange(e)}
-              />
-            </InputWrapper>
-            <Textarea
-              className="col-span-2"
-              error={
-                !form?.description && submitHovered && "Write a description"
-              }
-              label="Description"
-              name="description"
-              value={form?.description}
-              autosize
-              onChange={(e) => handleInputChange(e)}
-            />
-            <NativeSelect
-              name="status"
-              error={!form?.status && submitHovered && "Select a status"}
-              value={!!form?.status ? form?.status : ""}
-              data={taskStatusOptions}
-              label="Task Status"
-              onChange={(e) => handleInputChange(e)}
-            />
+    } else {
+      setFormEdit(() => ({
+        ...task,
+      }));
+    }
+  };
+  const mutationEdit = useMutation({
+    mutationFn: async (Task) => {
+      const docRef = await updateDoc(
+        doc(db, "tasks", task?.id as string),
+        Task as any
+      );
+      return docRef;
+    },
+    onSuccess: () => {
+      notifications.show({
+        color: "lime",
+        icon: (
+          <div className="font-bold">
+            <Icon width={"32px"} icon={"simple-line-icons:check"} />
           </div>
-          <div
-            className={clsx(
-              "rounded-tl-xl mb-4 w-16 h-12 transition-all border-2 border-gray-300 rounded-br-xl",
-              form?.title && form?.description
-                ? "hover:text-primary-900 hover:bg-primary-200 hover:border-primary-800 active:scale-95"
-                : "bg-gray-100 text-gray-300"
-            )}
-          >
-            <UnstyledButton
-              onClick={() =>
-                !form?.description ||
-                !form?.title ||
-                !form?.due_date ||
-                !form?.status
-                  ? setSubmitHovered(true)
-                  : handleSubmit()
-              }
-              className="w-full h-full"
-            >
-              <Icon
-                icon="material-symbols:save-outline"
-                className="m-auto"
-                width={"32"}
-              />
-            </UnstyledButton>
-          </div>
-        </Modal>
-        <div className="flex mb-4 place-items-center">
-          <div className="rounded-tl-xl mr-4 rounded-br-xl w-32 h-12 active:scale-95 transition-all border-2 border-gray-300 hover:text-primary-900 hover:bg-primary-200 hover:border-primary-800">
-            <UnstyledButton onClick={open} className="w-full h-full">
-              <Icon
-                icon="gridicons:add-outline"
-                className="m-auto"
-                width={"32"}
-              />
-            </UnstyledButton>
-          </div>
-          <span className="font-bold text-lg">Add a task</span>
-        </div>
-      </>
-    );
-  }
-
-  // $$$$$$$$\      $$\ $$\   $$\           $$\                   $$\     $$\
-  // $$  _____|     $$ |\__|  $$ |          $$ |                  $$ |    $$ |
-  // $$ |      $$$$$$$ |$$\ $$$$$$\         $$$$$$$\  $$\   $$\ $$$$$$\ $$$$$$\    $$$$$$\  $$$$$$$\
-  // $$$$$\   $$  __$$ |$$ |\_$$  _|        $$  __$$\ $$ |  $$ |\_$$  _|\_$$  _|  $$  __$$\ $$  __$$\
-  // $$  __|  $$ /  $$ |$$ |  $$ |          $$ |  $$ |$$ |  $$ |  $$ |    $$ |    $$ /  $$ |$$ |  $$ |
-  // $$ |     $$ |  $$ |$$ |  $$ |$$\       $$ |  $$ |$$ |  $$ |  $$ |$$\ $$ |$$\ $$ |  $$ |$$ |  $$ |
-  // $$$$$$$$\\$$$$$$$ |$$ |  \$$$$  |      $$$$$$$  |\$$$$$$  |  \$$$$  |\$$$$  |\$$$$$$  |$$ |  $$ |
-  // \________|\_______|\__|   \____/       \_______/  \______/    \____/  \____/  \______/ \__|  \__|
-
-  if (type == "edit" && task) {
-    const [openedEdit, { open: openEdit, close: closeEdit }] =
-      useDisclosure(false);
-    const [form, setForm] = useState(Object);
-    const handleInputChange = (e?: any, fill?: boolean) => {
-      if (!fill) {
-        const { name, value } = e.target;
-        setForm((prevForm: typeof form) => ({
-          ...prevForm,
-          [name]: value,
-        }));
-      } else {
-        setForm(() => ({
-          ...task,
-        }));
-      }
-    };
-    const mutationEdit = useMutation({
-      mutationFn: async (Task) => {
-        const docRef = await updateDoc(doc(db, "tasks", task.id), Task as any);
-        return docRef;
-      },
-      onSuccess: () => {
-        notifications.show({
-          color: "lime",
-          icon: (
-            <div className="font-bold">
-              <Icon width={"32px"} icon={"simple-line-icons:check"} />
-            </div>
-          ),
-          message: `Task "${form.title}" has been updated.`,
-        });
-        closeEdit();
-        QueryClient.invalidateQueries({
-          queryKey: ["get-tasks"],
-        });
-      },
-      onError: (error) => {
-        notifications.show({
-          color: "red",
-          icon: (
-            <div className="font-bold">
-              <Icon width={"32px"} icon={"healthicons:no-outline"} />
-            </div>
-          ),
-          message: `Task "${form.title}" couldn't be updated. Error: ${error}`,
-        });
-      },
-    });
-    const handleUpdate = () => {
-      mutationEdit.mutate(form as any);
+        ),
+        message: `Task "${formEdit.title}" has been updated.`,
+      });
+      closeEdit();
       QueryClient.invalidateQueries({
         queryKey: ["get-tasks"],
+        refetchType: "all",
       });
-    };
-
-    return (
-      <>
-        <Modal
-          title="Editing Task"
-          opened={openedEdit}
-          onClose={closeEdit}
-          centered
-          classNames={{ root: "text-black" }}
-          overlayProps={{
-            backgroundOpacity: 0.55,
-            blur: 3,
-          }}
-        >
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            <InputWrapper className="col-span-1" label="Title">
-              <Input
-                type="text"
-                name="title"
-                value={form.title}
-                onChange={(e) => handleInputChange(e)}
-              />
-            </InputWrapper>
-            <InputWrapper label="Due Date">
-              <Input
-                className="col-span-1"
-                type="date"
-                name="due_date"
-                value={form.due_date}
-                onChange={(e) => handleInputChange(e)}
-              />
-            </InputWrapper>
-            <Textarea
-              className="col-span-2"
-              label="Description"
-              name="description"
-              value={form.description}
-              autosize
-              onChange={(e) => handleInputChange(e)}
-            />
-            <NativeSelect
-              name="status"
-              value={form.status}
-              data={taskStatusOptions}
-              label="Task Status"
-              onChange={(e) => handleInputChange(e)}
-            />
+    },
+    onError: (error) => {
+      notifications.show({
+        color: "red",
+        icon: (
+          <div className="font-bold">
+            <Icon width={"32px"} icon={"healthicons:no-outline"} />
           </div>
-          <div
-            className={clsx(
-              "rounded-tl-xl mb-4 w-16 h-12 transition-all border-2 border-gray-300 rounded-br-xl",
-              form.title && form.description
-                ? "hover:text-primary-900 hover:bg-primary-200 hover:border-primary-800 active:scale-95"
-                : "bg-gray-100 text-gray-300"
-            )}
-          >
-            <UnstyledButton
-              disabled={!form.description || !form.title}
-              onClick={handleUpdate}
-              className="w-full h-full"
-            >
-              <Icon
-                icon="material-symbols:save-outline"
-                className="m-auto"
-                width={"32"}
-              />
-            </UnstyledButton>
-          </div>
-        </Modal>
-        <HoverCard shadow="md">
-          <HoverCard.Target>
-            <div className={className}>
-              <UnstyledButton
-                onClick={() => {
-                  openEdit();
-                  handleInputChange(null, true);
-                }}
-                className="w-full h-full flex place-items-center"
-              >
-                <Icon icon={icon ? icon : ""} className="m-auto" width={"32"} />
-              </UnstyledButton>
-            </div>
-          </HoverCard.Target>
-          <HoverCard.Dropdown>
-            <Text size="sm">{description}</Text>
-          </HoverCard.Dropdown>
-        </HoverCard>
-      </>
-    );
-  }
-
-  // $$$$$$$\            $$\            $$\                     $$\                   $$\     $$\
-  // $$  __$$\           $$ |           $$ |                    $$ |                  $$ |    $$ |
-  // $$ |  $$ | $$$$$$\  $$ | $$$$$$\ $$$$$$\    $$$$$$\        $$$$$$$\  $$\   $$\ $$$$$$\ $$$$$$\    $$$$$$\  $$$$$$$\
-  // $$ |  $$ |$$  __$$\ $$ |$$  __$$\\_$$  _|  $$  __$$\       $$  __$$\ $$ |  $$ |\_$$  _|\_$$  _|  $$  __$$\ $$  __$$\
-  // $$ |  $$ |$$$$$$$$ |$$ |$$$$$$$$ | $$ |    $$$$$$$$ |      $$ |  $$ |$$ |  $$ |  $$ |    $$ |    $$ /  $$ |$$ |  $$ |
-  // $$ |  $$ |$$   ____|$$ |$$   ____| $$ |$$\ $$   ____|      $$ |  $$ |$$ |  $$ |  $$ |$$\ $$ |$$\ $$ |  $$ |$$ |  $$ |
-  // $$$$$$$  |\$$$$$$$\ $$ |\$$$$$$$\  \$$$$  |\$$$$$$$\       $$$$$$$  |\$$$$$$  |  \$$$$  |\$$$$  |\$$$$$$  |$$ |  $$ |
-  // \_______/  \_______|\__| \_______|  \____/  \_______|      \_______/  \______/    \____/  \____/  \______/ \__|  \__|
-
-  if (type == "delete" && task) {
-    const [openedDelete, { open: openDelete, close: closeDelete }] =
-      useDisclosure(false);
-    const deleteMutation = useMutation({
-      mutationFn: async () => {
-        const docRef = await deleteDoc(doc(db as any, "tasks", task.id));
-        return docRef;
-      },
-      onSuccess: () => {
-        notifications.show({
-          color: "lime",
-          icon: (
-            <div className="font-bold">
-              <Icon width={"32px"} icon={"simple-line-icons:check"} />
-            </div>
-          ),
-          message: `Task "${task.title}" has been deleted succesfully.`,
-        });
-        closeDelete();
-      },
-      onError: (error) => {
-        notifications.show({
-          color: "red",
-          icon: (
-            <div className="font-bold">
-              <Icon width={"32px"} icon={"healthicons:no-outline"} />
-            </div>
-          ),
-          message: `Task "${task.title}" couldn't be deleted. Error: ${error}`,
-        });
-      },
-    });
-    const handleDelete = () => {
-      deleteMutation.mutate();
-      QueryClient.invalidateQueries({
-        queryKey: ["get-tasks"],
+        ),
+        message: `Task "${formEdit.title}" couldn't be updated. Error: ${error}`,
       });
-    };
-    return (
-      <>
-        <Modal
-          title="Deleting Task"
-          opened={openedDelete}
-          onClose={closeDelete}
-          centered
-          classNames={{ root: "text-black" }}
-          overlayProps={{
-            backgroundOpacity: 0.55,
-            blur: 3,
-          }}
-        >
-          <h1 className="font-bold text-xl mb-4">
-            Are you sure you want to delete "{task.title}"?
-          </h1>
-          <div
-            className={clsx(
-              "rounded-tl-xl mb-4 w-16 h-12 border-2 text-red-950 bg-red-400 border-red-500 active:scale-95 rounded-br-xl"
-            )}
-          >
-            <UnstyledButton onClick={handleDelete} className="w-full h-full">
-              <Icon icon="ic:baseline-delete" className="m-auto" width={"32"} />
-            </UnstyledButton>
-          </div>
-        </Modal>
-        <HoverCard shadow="md">
-          <HoverCard.Target>
-            <div className={className}>
-              <UnstyledButton
-                onClick={() => {
-                  openDelete();
-                }}
-                className="w-full h-full flex place-items-center"
-              >
-                <Icon icon={icon ? icon : ""} className="m-auto" width={"32"} />
-              </UnstyledButton>
-            </div>
-          </HoverCard.Target>
-          <HoverCard.Dropdown>
-            <Text size="sm">{description}</Text>
-          </HoverCard.Dropdown>
-        </HoverCard>
-      </>
-    );
-  }
-
-  //  $$$$$$\    $$\                $$\                               $$\                   $$\     $$\
-  //  $$  __$$\   $$ |               $$ |                              $$ |                  $$ |    $$ |
-  //  $$ /  \__|$$$$$$\    $$$$$$\ $$$$$$\   $$\   $$\  $$$$$$$\       $$$$$$$\  $$\   $$\ $$$$$$\ $$$$$$\    $$$$$$\  $$$$$$$\
-  //  \$$$$$$\  \_$$  _|   \____$$\\_$$  _|  $$ |  $$ |$$  _____|      $$  __$$\ $$ |  $$ |\_$$  _|\_$$  _|  $$  __$$\ $$  __$$\
-  //   \____$$\   $$ |     $$$$$$$ | $$ |    $$ |  $$ |\$$$$$$\        $$ |  $$ |$$ |  $$ |  $$ |    $$ |    $$ /  $$ |$$ |  $$ |
-  //  $$\   $$ |  $$ |$$\ $$  __$$ | $$ |$$\ $$ |  $$ | \____$$\       $$ |  $$ |$$ |  $$ |  $$ |$$\ $$ |$$\ $$ |  $$ |$$ |  $$ |
-  //  \$$$$$$  |  \$$$$  |\$$$$$$$ | \$$$$  |\$$$$$$  |$$$$$$$  |      $$$$$$$  |\$$$$$$  |  \$$$$  |\$$$$  |\$$$$$$  |$$ |  $$ |
-  //   \______/    \____/  \_______|  \____/  \______/ \_______/       \_______/  \______/    \____/  \____/  \______/ \__|  \__|
-
-  if (type == "status" && task) {
-    const mutation = useMutation({
-      mutationFn: async (e: any) => {
-        const docRef = await updateDoc(doc(db, "tasks", task.id), {
-          ...task,
-          status: e.target.value,
-        });
-        return docRef;
-      },
-      onSuccess: () => {
-        notifications.show({
-          color: "lime",
-          icon: (
-            <div className="font-bold">
-              <Icon width={"32px"} icon={"simple-line-icons:check"} />
-            </div>
-          ),
-          message: `Task "${task.title}" has been completed.`,
-        });
-        QueryClient.invalidateQueries({
-          queryKey: ["get-tasks"],
-        });
-      },
-      onError: (error) => {
-        notifications.show({
-          color: "red",
-          icon: (
-            <div className="font-bold">
-              <Icon width={"32px"} icon={"healthicons:no-outline"} />
-            </div>
-          ),
-          message: `Error: ${error}`,
-        });
-      },
-    });
-    const handleComplete = (e: any) => {
-      mutation.mutate(e);
-    };
-    return (
-      <NativeSelect
-        className="rounded-br-xl rounded-tl-xl mx-2 my-auto transition-all hover:scale-105 text-center font-bold text-xl active:scale-95"
-        classNames={{
-          input: clsx(
-            task.status == "completed" && "bg-primary-600",
-            task.status == "started" && "bg-yellow-100",
-            task.status == "not_started" && "bg-red-400",
-            task.status == "stand_by" && "bg-orange-300",
-            task.status == "planning" && "bg-yellow-400"
-          ),
-          section: "bg-white",
+    },
+  });
+  const handleUpdate = () => {
+    mutationEdit.mutate(formEdit as any);
+  };
+  return (
+    <>
+      <Modal
+        title="Editing Task"
+        size={"72%"}
+        opened={openedEdit}
+        onClose={closeEdit}
+        centered
+        classNames={{ root: "text-black" }}
+        overlayProps={{
+          backgroundOpacity: 0.55,
+          blur: 3,
         }}
-        defaultValue={task.status}
-        data={taskStatusOptions}
-        onChange={handleComplete}
-      />
-    );
-  }
+      >
+        <TaskForm
+          form={formEdit}
+          handleOnChange={(e: any) => handleInputChangeEdit(e)}
+          handleOnSubmit={() =>
+            !formEdit?.description ||
+            !formEdit?.title ||
+            !formEdit?.due_date ||
+            !formEdit?.status
+              ? setSubmitHovered(true)
+              : handleUpdate()
+          }
+          submitHovered={submitHovered}
+        />
+      </Modal>
+      <div className="rounded-br-xl rounded-tl-xl min-w-24 transition-all border-2 border-gray-300 hover:text-primary-900 hover:bg-primary-200 hover:border-primary-800 active:scale-95">
+        <UnstyledButton
+          onClick={() => {
+            openEdit();
+            handleInputChangeEdit(null, true);
+          }}
+          className="w-full h-full flex place-items-center"
+        >
+          <Icon icon="tdesign:edit" className="m-auto" width={"32"} />
+        </UnstyledButton>
+      </div>
+    </>
+  );
+}
+
+// $$$$$$$\            $$\            $$\                     $$\                   $$\     $$\
+// $$  __$$\           $$ |           $$ |                    $$ |                  $$ |    $$ |
+// $$ |  $$ | $$$$$$\  $$ | $$$$$$\ $$$$$$\    $$$$$$\        $$$$$$$\  $$\   $$\ $$$$$$\ $$$$$$\    $$$$$$\  $$$$$$$\
+// $$ |  $$ |$$  __$$\ $$ |$$  __$$\\_$$  _|  $$  __$$\       $$  __$$\ $$ |  $$ |\_$$  _|\_$$  _|  $$  __$$\ $$  __$$\
+// $$ |  $$ |$$$$$$$$ |$$ |$$$$$$$$ | $$ |    $$$$$$$$ |      $$ |  $$ |$$ |  $$ |  $$ |    $$ |    $$ /  $$ |$$ |  $$ |
+// $$ |  $$ |$$   ____|$$ |$$   ____| $$ |$$\ $$   ____|      $$ |  $$ |$$ |  $$ |  $$ |$$\ $$ |$$\ $$ |  $$ |$$ |  $$ |
+// $$$$$$$  |\$$$$$$$\ $$ |\$$$$$$$\  \$$$$  |\$$$$$$$\       $$$$$$$  |\$$$$$$  |  \$$$$  |\$$$$  |\$$$$$$  |$$ |  $$ |
+// \_______/  \_______|\__| \_______|  \____/  \_______|      \_______/  \______/    \____/  \____/  \______/ \__|  \__|
+
+export function DeleteButton({ task }: ActionButtonProps) {
+  const QueryClient = useQueryClient();
+  const [openedDelete, { open: openDelete, close: closeDelete }] =
+    useDisclosure(false);
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      const docRef = await deleteDoc(
+        doc(db as any, "tasks", task?.id as string)
+      );
+      return docRef;
+    },
+    onSuccess: () => {
+      notifications.show({
+        color: "lime",
+        icon: (
+          <div className="font-bold">
+            <Icon width={"32px"} icon={"simple-line-icons:check"} />
+          </div>
+        ),
+        message: `Task "${task?.title}" has been deleted succesfully.`,
+      });
+      closeDelete();
+      QueryClient.invalidateQueries({
+        queryKey: ["get-tasks"],
+        refetchType: "all",
+      });
+    },
+    onError: (error) => {
+      notifications.show({
+        color: "red",
+        icon: (
+          <div className="font-bold">
+            <Icon width={"32px"} icon={"healthicons:no-outline"} />
+          </div>
+        ),
+        message: `Task "${task?.title}" couldn't be deleted. Error: ${error}`,
+      });
+    },
+  });
+  const handleDelete = () => {
+    deleteMutation.mutate();
+  };
+  return (
+    <>
+      <Modal
+        title="Deleting Task"
+        opened={openedDelete}
+        onClose={closeDelete}
+        centered
+        classNames={{ root: "text-black" }}
+        overlayProps={{
+          backgroundOpacity: 0.55,
+          blur: 3,
+        }}
+      >
+        <h1 className="font-bold text-xl mb-4">
+          Are you sure you want to delete "{task?.title}"?
+        </h1>
+        <div
+          className={clsx(
+            "rounded-tl-xl mb-4 w-16 h-12 border-2 text-red-950 bg-red-400 border-red-500 active:scale-95 rounded-br-xl"
+          )}
+        >
+          <UnstyledButton onClick={handleDelete} className="w-full h-full">
+            <Icon icon="ic:baseline-delete" className="m-auto" width={"32"} />
+          </UnstyledButton>
+        </div>
+      </Modal>
+      <div className="rounded-br-xl rounded-tl-xl min-w-24 transition-all border-2 border-gray-300 hover:text-red-950 hover:bg-red-400 hover:border-red-500 active:scale-95">
+        <UnstyledButton
+          onClick={() => {
+            openDelete();
+          }}
+          className="w-full h-full flex place-items-center"
+        >
+          <Icon icon="ic:baseline-delete" className="m-auto" width={"32"} />
+        </UnstyledButton>
+      </div>
+    </>
+  );
+}
+
+//  $$$$$$\    $$\                $$\                               $$\                   $$\     $$\
+//  $$  __$$\   $$ |               $$ |                              $$ |                  $$ |    $$ |
+//  $$ /  \__|$$$$$$\    $$$$$$\ $$$$$$\   $$\   $$\  $$$$$$$\       $$$$$$$\  $$\   $$\ $$$$$$\ $$$$$$\    $$$$$$\  $$$$$$$\
+//  \$$$$$$\  \_$$  _|   \____$$\\_$$  _|  $$ |  $$ |$$  _____|      $$  __$$\ $$ |  $$ |\_$$  _|\_$$  _|  $$  __$$\ $$  __$$\
+//   \____$$\   $$ |     $$$$$$$ | $$ |    $$ |  $$ |\$$$$$$\        $$ |  $$ |$$ |  $$ |  $$ |    $$ |    $$ /  $$ |$$ |  $$ |
+//  $$\   $$ |  $$ |$$\ $$  __$$ | $$ |$$\ $$ |  $$ | \____$$\       $$ |  $$ |$$ |  $$ |  $$ |$$\ $$ |$$\ $$ |  $$ |$$ |  $$ |
+//  \$$$$$$  |  \$$$$  |\$$$$$$$ | \$$$$  |\$$$$$$  |$$$$$$$  |      $$$$$$$  |\$$$$$$  |  \$$$$  |\$$$$  |\$$$$$$  |$$ |  $$ |
+//   \______/    \____/  \_______|  \____/  \______/ \_______/       \_______/  \______/    \____/  \____/  \______/ \__|  \__|
+
+export function StatusButton({ task }: ActionButtonProps) {
+  const QueryClient = useQueryClient();
+  const mutationStatus = useMutation({
+    mutationFn: async (e: any) => {
+      const docRef = await updateDoc(doc(db, "tasks", task?.id as string), {
+        ...task,
+        status: e.target.value,
+      });
+      return docRef;
+    },
+    onSuccess: () => {
+      notifications.show({
+        color: "lime",
+        icon: (
+          <div className="font-bold">
+            <Icon width={"32px"} icon={"simple-line-icons:check"} />
+          </div>
+        ),
+        message: `Task "${task?.title}" has been completed.`,
+      });
+      QueryClient.invalidateQueries({
+        queryKey: ["get-tasks"],
+        refetchType: "all",
+      });
+    },
+    onError: (error) => {
+      notifications.show({
+        color: "red",
+        icon: (
+          <div className="font-bold">
+            <Icon width={"32px"} icon={"healthicons:no-outline"} />
+          </div>
+        ),
+        message: `Error: ${error}`,
+      });
+    },
+  });
+  const handleStatus = (e: any) => {
+    mutationStatus.mutate(e);
+  };
+  return (
+    <NativeSelect
+      className="rounded-br-xl rounded-tl-xl mx-2 my-auto transition-all hover:scale-105 text-center font-bold text-xl active:scale-95"
+      classNames={{
+        input: clsx(
+          task?.status == "completed" && "bg-primary-600",
+          task?.status == "started" && "bg-yellow-100",
+          task?.status == "not_started" && "bg-red-400",
+          task?.status == "stand_by" && "bg-orange-300",
+          task?.status == "planning" && "bg-yellow-400"
+        ),
+        section: "bg-white",
+      }}
+      defaultValue={task?.status}
+      data={taskStatusOptions}
+      onChange={handleStatus}
+    />
+  );
 }

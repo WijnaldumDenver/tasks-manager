@@ -1,9 +1,13 @@
 "use client";
 
 import { useGetTaskPageQuery, useGetTasksQuery } from "@/queries/getTasks";
-import { Button, Image, Skeleton, UnstyledButton } from "@mantine/core";
+import { Skeleton, UnstyledButton } from "@mantine/core";
 import { auth } from "@/../firebase-app-config";
-import ActionButton from "@/components/TaskActionButtons";
+import {
+  DeleteButton,
+  EditButton,
+  StatusButton,
+} from "@/components/TaskActionButtons";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Icon } from "@iconify/react/dist/iconify.js";
@@ -43,27 +47,15 @@ export default function TaskPage() {
               <span className="font-bold text-xl">
                 Due <span className="opacity-50">{task?.due_date}</span>
               </span>
-              <ActionButton type="status" task={task} />
+              <StatusButton task={task} />
             </div>
             <div className="mb-4 grid place-items-center grid-flow-col gap-4">
-              <ActionButton
-                type="edit"
-                task={task}
-                icon="tdesign:edit"
-                description="Edit"
-                className="rounded-br-xl rounded-tl-xl min-w-24 transition-all border-2 border-gray-300 hover:text-primary-900 hover:bg-primary-200 hover:border-primary-800 active:scale-95"
-              />
-              <ActionButton
-                type="delete"
-                task={task}
-                icon="ic:baseline-delete"
-                description="Delete"
-                className="rounded-br-xl rounded-tl-xl min-w-24 transition-all border-2 border-gray-300 hover:text-red-950 hover:bg-red-400 hover:border-red-500 active:scale-95"
-              />
+              <EditButton task={task} />
+              <DeleteButton task={task} />
             </div>
           </div>
           <div
-            className="w-full h max-h-full p-2 bg-[#efefeF] rounded-tl-xl rounded-br-xl overflow-auto"
+            className="w-full h max-h-[520px] p-2 rounded-tl-xl rounded-br-xl overflow-y-auto overflow-x-hidden"
             dangerouslySetInnerHTML={{ __html: task?.description }}
           />
         </div>
